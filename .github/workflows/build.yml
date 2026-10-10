@@ -44,6 +44,11 @@ jobs:
       (github.event_name == 'workflow_dispatch' && inputs.source)
     runs-on: [self-hosted, nixos, intel-npu]
     timeout-minutes: 600
+    # Progress for the desktop bar on the runner machine: the current step name and
+    # the latest build counter ("<package> <done> <total>"), as two tiny files in
+    # the runner's home, which is world-readable.
+    env:
+      CI_STATUS: ${{ github.workspace }}/../../ci-status
     steps:
       - uses: actions/checkout@v7
       - uses: cachix/cachix-action@v17
@@ -54,9 +59,21 @@ jobs:
           # the machine's NixOS config lists this cache instead. Pushing still works.
           skipAddingSubstituter: true
       - name: Build Intel's LLVM fork and the compiler from source
-        run: nix build -L .#npu-compiler-llvm .#intel-npu-compiler-source
+        run: |
+          mkdir -p "$CI_STATUS"
+          echo "Build LLVM fork and compiler" > "$CI_STATUS/step"
+          # Pass the log through unchanged, and keep the latest "pkg> [n/N]" counter.
+          nix build -L .#npu-compiler-llvm .#intel-npu-compiler-source 2>&1 |
+            while IFS= read -r line; do
+              printf '%s\n' "$line"
+              if [[ $line =~ ^([a-z0-9.-]+)\>\ \[([0-9]+)/([0-9]+)\] ]]; then
+                echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]} ${BASH_REMATCH[3]}" > "$CI_STATUS/progress"
+              fi
+            done
       - name: Run Intel's NPU tests with the source-built compiler
         run: |
+          echo "NPU tests" > "$CI_STATUS/step"
+          rm -f "$CI_STATUS/progress"
           compiler=$(nix build --print-out-paths .#intel-npu-compiler-source)
           driver=$(nix build --inputs-from . --print-out-paths nixpkgs#intel-npu-driver)
           validation=$(nix build --inputs-from . --print-out-paths nixpkgs#intel-npu-driver.validation)
@@ -64,3 +81,6 @@ jobs:
           ln -s "$driver"/lib/libze_intel_npu.so* "$compiler"/lib/*.so "$lib"/
           LD_LIBRARY_PATH="$lib:$(nix build --inputs-from . --print-out-paths nixpkgs#level-zero)/lib" \
             "$validation"/bin/npu-umd-test --config none
+      - name: Clear progress
+        if: always()
+        run: rm -rf "$CI_STATUS"
