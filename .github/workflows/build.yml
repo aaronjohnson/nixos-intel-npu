@@ -1,0 +1,63 @@
+# Builds the packages and shares the results through the Cachix binary cache
+# "nixos-intel-npu", so users don't have to compile them.
+#
+# - binary: Intel's prebuilt compiler, on GitHub's free runners, for every push
+#   and pull request.
+# - source: the LLVM fork and the source-built compiler (hours of compiling),
+#   plus Intel's NPU tests on real hardware, on a self-hosted runner with an
+#   Intel NPU. It never runs for pull requests, so code from a PR can't reach
+#   that machine; only pushes to main and manual runs start it.
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Also build from source and test on the NPU runner"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  binary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: nixos-intel-npu
+          # Not available to pull requests from forks: they read the cache but don't push.
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix flake check -L
+      - run: nix build -L .#intel-npu-compiler
+
+  source:
+    needs: binary
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && inputs.source)
+    runs-on: [self-hosted, nixos, intel-npu]
+    timeout-minutes: 600
+    steps:
+      - uses: actions/checkout@v7
+      - uses: cachix/cachix-action@v17
+        with:
+          name: nixos-intel-npu
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build Intel's LLVM fork and the compiler from source
+        run: nix build -L .#npu-compiler-llvm .#intel-npu-compiler-source
+      - name: Run Intel's NPU tests with the source-built compiler
+        run: |
+          compiler=$(nix build --print-out-paths .#intel-npu-compiler-source)
+          driver=$(nix build --inputs-from . --print-out-paths nixpkgs#intel-npu-driver)
+          validation=$(nix build --inputs-from . --print-out-paths nixpkgs#intel-npu-driver.validation)
+          lib=$(mktemp -d)
+          ln -s "$driver"/lib/libze_intel_npu.so* "$compiler"/lib/*.so "$lib"/
+          LD_LIBRARY_PATH="$lib:$(nix build --inputs-from . --print-out-paths nixpkgs#level-zero)/lib" \
+            "$validation"/bin/npu-umd-test --config none

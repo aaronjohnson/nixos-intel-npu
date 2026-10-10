@@ -1,0 +1,5 @@
+self-hosted-runner:
+  # Labels of the self-hosted runner with an Intel NPU (see .github/workflows/build.yml).
+  labels:
+    - nixos
+    - intel-npu
