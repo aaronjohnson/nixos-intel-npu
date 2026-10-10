@@ -101,7 +101,14 @@ stdenv.mkDerivation {
   # unknown or duplicate keys, each value is checked after parsing, and an assert
   # precedes the read. GCC can't see through the lambda and std::optional. This
   # keeps the warning visible but non-fatal; Intel builds with an older GCC.
-  env.NIX_CFLAGS_COMPILE = "-Wno-error=maybe-uninitialized";
+  #
+  # It also reports -Wunused-but-set-variable for a loop counter that is
+  # incremented but never read (VPUIP legalize_repeating_func_calls.cpp): accurate
+  # but harmless dead code. Intel passes the same flag for its Android builds.
+  env.NIX_CFLAGS_COMPILE = toString [
+    "-Wno-error=maybe-uninitialized"
+    "-Wno-error=unused-but-set-variable"
+  ];
 
   # Large build: on Hydra, build on the big machines.
   requiredSystemFeatures = [ "big-parallel" ];
