@@ -11,11 +11,10 @@
   cmake,
   ninja,
   python3,
-  pkg-config,
-  tbb,
+  onetbb,
   zlib,
   zstd,
-  # Intel's LLVM/MLIR fork, built separately (see npu-compiler-llvm.nix).
+  # Intel's LLVM/MLIR fork, built as its own package.
   npu-compiler-llvm,
 }:
 
@@ -47,6 +46,8 @@ let
 in
 stdenv.mkDerivation {
   pname = "intel-npu-compiler";
+  # The compiler revision pinned by intel/linux-npu-driver 1.38.0
+  # (compiler/compiler_source.cmake), matching nixpkgs' intel-npu-driver.
   version = "1.38.0";
 
   # OpenVINO is the CMake project; the compiler plugs into it as an extra module.
@@ -121,11 +122,10 @@ stdenv.mkDerivation {
     cmake
     ninja
     python3
-    pkg-config
   ];
 
   buildInputs = [
-    tbb
+    onetbb
     zlib
     zstd
   ];
@@ -186,15 +186,13 @@ stdenv.mkDerivation {
 
   installPhase = ''
     runHook preInstall
-    cmake --install . --component CiD --prefix $out --strip
+    cmake --install . --component CiD --prefix $out
     # Intel packages the component under cid/; use the usual layout.
     mv $out/cid/lib $out/lib
     mv $out/cid/include $out/include
     rm -r $out/cid
     runHook postInstall
   '';
-
-  passthru = { inherit openvinoSrc npuCompilerSrc; };
 
   meta = {
     description = "Intel NPU model compiler for the Level Zero NPU driver and OpenVINO, built from source";

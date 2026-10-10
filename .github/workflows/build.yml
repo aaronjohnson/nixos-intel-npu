@@ -50,6 +50,9 @@ jobs:
         with:
           name: nixos-intel-npu
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          # The runner is not a trusted Nix user, so it can't add substituters;
+          # the machine's NixOS config lists this cache instead. Pushing still works.
+          skipAddingSubstituter: true
       - name: Build Intel's LLVM fork and the compiler from source
         run: nix build -L .#npu-compiler-llvm .#intel-npu-compiler-source
       - name: Run Intel's NPU tests with the source-built compiler

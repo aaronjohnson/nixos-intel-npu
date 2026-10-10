@@ -4,13 +4,14 @@
 #
 # Same idea as nixpkgs' triton-llvm, but this is a fork, not upstream LLVM at a
 # pinned commit: intel-staging/npu-compiler-llvm carries 26 commits on top of
-# upstream (2026-02-23), mostly MLIR changes the compiler depends on and upstream
+# upstream (branched 2026-02-23), mostly MLIR changes the compiler depends on and upstream
 # doesn't have: quantile-quantized and FP4 types in the Quant dialect, relaxed
 # operand types in the ASM parser, memory-space attributes, inliner and
 # side-effect interface additions.
 #
 # Configuration mirrors set_llvm_flags() in npu_compiler's
-# cmake/compile_options_llvm.cmake.
+# cmake/compile_options_llvm.cmake, minus LLVM_ENABLE_TERMINFO and
+# LLVM_BUILD_EXAMPLES, which this LLVM no longer has.
 {
   lib,
   stdenv,
@@ -27,7 +28,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "npu-compiler-llvm";
-  version = "23.0.0-unstable-2026-02-23";
+  version = "23.0.0-unstable-2026-08-18";
 
   # The llvm-project submodule of openvinotoolkit/npu_compiler at
   # npu_ud_2026_38_rc1 (the compiler shipped with linux-npu-driver 1.38.0).
@@ -63,8 +64,6 @@ stdenv.mkDerivation (finalAttrs: {
     # Static libraries, linked into the compiler's shared library, as in Intel's build.
     (lib.cmakeBool "BUILD_SHARED_LIBS" false)
     (lib.cmakeBool "LLVM_ENABLE_PIC" true)
-  ]
-  ++ [
     (lib.cmakeBool "LLVM_INCLUDE_TESTS" buildTests)
     (lib.cmakeBool "MLIR_INCLUDE_TESTS" buildTests)
   ]
@@ -73,10 +72,8 @@ stdenv.mkDerivation (finalAttrs: {
     "LLVM_ENABLE_BINDINGS"
     "LLVM_ENABLE_BACKTRACES"
     "LLVM_ENABLE_CRASH_OVERRIDES"
-    "LLVM_ENABLE_TERMINFO"
     "LLVM_INCLUDE_BENCHMARKS"
     "LLVM_INCLUDE_EXAMPLES"
-    "LLVM_BUILD_EXAMPLES"
     "LLVM_BUILD_TOOLS"
   ];
 
