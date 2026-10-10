@@ -60,7 +60,10 @@ jobs:
           skipAddingSubstituter: true
       - name: Build Intel's LLVM fork and the compiler from source
         run: |
+          # The NixOS runner service uses UMask 0066; make the status readable by the desktop.
+          umask 022
           mkdir -p "$CI_STATUS"
+          chmod 755 "$CI_STATUS"
           echo "Build LLVM fork and compiler" > "$CI_STATUS/step"
           # Pass the log through unchanged, and keep the latest "pkg> [n/N]" counter.
           nix build -L .#npu-compiler-llvm .#intel-npu-compiler-source 2>&1 |
@@ -72,6 +75,7 @@ jobs:
             done
       - name: Run Intel's NPU tests with the source-built compiler
         run: |
+          umask 022
           echo "NPU tests" > "$CI_STATUS/step"
           rm -f "$CI_STATUS/progress"
           compiler=$(nix build --print-out-paths .#intel-npu-compiler-source)
