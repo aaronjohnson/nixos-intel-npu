@@ -41,6 +41,20 @@ nixos-intel-npu.nixosModules.default
 This also turns on `hardware.cpu.intel.npu.enable`, and puts the compiler next to
 the driver in `/run/opengl-driver/lib`.
 
+## Binary cache
+
+CI builds both versions and pushes them to [nixos-intel-npu.cachix.org](https://nixos-intel-npu.cachix.org).
+The source build is compiled and tested on a laptop with an Intel NPU (Intel's
+`npu-umd-test` on real hardware) before it lands in the cache. The flake offers the cache
+via `nixConfig`; to use it system-wide:
+
+```nix
+nix.settings = {
+  substituters = [ "https://nixos-intel-npu.cachix.org" ];
+  trusted-public-keys = [ "nixos-intel-npu.cachix.org-1:ikhkuI/crInBQxA1PBUQAupWk13HfJCDAIYHHn7/g3A=" ];
+};
+```
+
 ## Building from source
 
 The default package repackages Intel's prebuilt compiler (installs in seconds).
