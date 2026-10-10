@@ -200,6 +200,12 @@ stdenv.mkDerivation {
     description = "Intel NPU model compiler for the Level Zero NPU driver and OpenVINO, built from source";
     homepage = "https://github.com/openvinotoolkit/npu_compiler";
     license = lib.licenses.asl20;
+    # Built from source, except the 794 SHAVE kernels that run on the NPU itself
+    # (sw_runtime_kernels/**/prebuild): they need Intel's non-public MoviTools.
+    sourceProvenance = with lib.sourceTypes; [
+      fromSource
+      binaryFirmware
+    ];
     platforms = [ "x86_64-linux" ];
   };
 }
