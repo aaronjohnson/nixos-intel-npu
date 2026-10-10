@@ -13,6 +13,7 @@
       packages.${system} = {
         intel-npu-compiler = pkgs.callPackage ./package.nix { };
         intel-npu-compiler-source = pkgs.callPackage ./package-source.nix { };
+        npu-compiler-llvm = pkgs.callPackage ./npu-compiler-llvm.nix { };
         default = self.packages.${system}.intel-npu-compiler;
       };
 
