@@ -12,6 +12,7 @@
     {
       packages.${system} = {
         intel-npu-compiler = pkgs.callPackage ./package.nix { };
+        intel-npu-compiler-source = pkgs.callPackage ./package-source.nix { };
         default = self.packages.${system}.intel-npu-compiler;
       };
 
