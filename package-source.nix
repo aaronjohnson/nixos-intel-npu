@@ -35,7 +35,11 @@ let
     repo = "npu_compiler";
     rev = "0b38f7d42113ff329ac2bdd33583d123de4ccf2f"; # tag npu_ud_2026_38_rc1
     fetchSubmodules = true;
-    hash = "sha256-OEFpC5t9Koj1kH5cKMeeo77fbHHNm47ezh2avLSm/A4=";
+    # The NPU-side SHAVE kernels (sw_runtime_kernels/**/prebuild) are stored in
+    # Git LFS. They run on the NPU's own vector cores and are built with Intel's
+    # SHAVE toolchain, so they ship prebuilt, like firmware.
+    fetchLFS = true;
+    hash = "sha256-rXUysfCLKc3VKavc3lG8BZtWLgvQVPTI/QP11Xk8F/Y=";
   };
   # Submodule commits of that npu_compiler revision, for version strings.
   llvmRev = "8f3977c01be0f24be98b67ef2c911fd82657f30c"; # thirdparty/llvm-project
@@ -183,6 +187,10 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
     cmake --install . --component CiD --prefix $out --strip
+    # Intel packages the component under cid/; use the usual layout.
+    mv $out/cid/lib $out/lib
+    mv $out/cid/include $out/include
+    rm -r $out/cid
     runHook postInstall
   '';
 
