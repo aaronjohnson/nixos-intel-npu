@@ -12,8 +12,10 @@
     {
       packages.${system} = {
         intel-npu-compiler = pkgs.callPackage ./package.nix { };
-        intel-npu-compiler-source = pkgs.callPackage ./package-source.nix { };
         npu-compiler-llvm = pkgs.callPackage ./npu-compiler-llvm.nix { };
+        intel-npu-compiler-source = pkgs.callPackage ./package-source.nix {
+          inherit (self.packages.${system}) npu-compiler-llvm;
+        };
         default = self.packages.${system}.intel-npu-compiler;
       };
 
