@@ -10,13 +10,15 @@
 name: build
 
 on:
+  # Only changes to what gets built start a run: the source build on the NPU
+  # runner takes about two hours, and a CHANGELOG push, then this workflow's own
+  # edit, each set one off. Docs, the licence and CI edits don't; start one by
+  # hand (workflow_dispatch) to test a CI change.
   push:
     branches: [main]
-    # Docs don't change what gets built; a CHANGELOG push once started a
-    # two-hour source build on the NPU runner. Re-run by hand if you need one.
-    paths-ignore: ["**.md"]
+    paths: ["**.nix", "flake.lock"]
   pull_request:
-    paths-ignore: ["**.md"]
+    paths: ["**.nix", "flake.lock"]
   workflow_dispatch:
     inputs:
       source:
