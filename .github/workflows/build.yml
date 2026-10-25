@@ -5,8 +5,8 @@
 #   and pull request.
 # - source: the LLVM fork and the source-built compiler (hours of compiling),
 #   plus Intel's NPU tests on real hardware, on a self-hosted runner with an
-#   Intel NPU. It never runs for pull requests, so code from a PR can't reach
-#   that machine; only pushes to main and manual runs start it.
+#   Intel NPU. Only a manual run starts it (never a push or a pull request, so
+#   code from a PR can't reach that machine).
 name: build
 
 on:
@@ -45,9 +45,9 @@ jobs:
 
   source:
     needs: binary
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && inputs.source)
+    # By hand only, for now: keeping the source build current isn't worth two hours
+    # of the laptop's fan on every push. Actions → build → Run workflow.
+    if: github.event_name == 'workflow_dispatch' && inputs.source
     runs-on: [self-hosted, nixos, intel-npu]
     timeout-minutes: 600
     # Progress for the desktop bar on the runner machine: the current step name and
