@@ -12,7 +12,11 @@ name: build
 on:
   push:
     branches: [main]
+    # Docs don't change what gets built; a CHANGELOG push once started a
+    # two-hour source build on the NPU runner. Re-run by hand if you need one.
+    paths-ignore: ["**.md"]
   pull_request:
+    paths-ignore: ["**.md"]
   workflow_dispatch:
     inputs:
       source:
